@@ -5,17 +5,17 @@ namespace WeatherForecastAggregator.Parser
 {
     public static class SelectParser
     {
-        public static IParser GetParser(string baseLink)
+        public static IParser GetParser(Forecaster f)
         {
-            if (baseLink == "https://sinoptik.ua/")
+            if (f.Name == "sinoptik")
             {
                 return new Parser1();
             }
-            if (baseLink == "https://www.gismeteo.ua/")
+            if (f.Name == "gismeteo")
             {
                 return new Parser2();
             }
-            if (baseLink == "https://meteo.ua/")
+            if (f.Name == "meteo")
             {
                 return new Parser3();
             }

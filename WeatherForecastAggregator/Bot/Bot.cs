@@ -23,8 +23,9 @@ namespace WeatherForecastAggregator.Bot
     public class Bot
     {
         public Dictionary<int, City> citiesDictionary;
-        public List<string> baseLinks;
-        public Bot(List<City> cities, List<string> baseLinks)
+        public List<Forecaster> forecasters;
+
+        public Bot(List<City> cities, List<Forecaster> forecasters)
         {
             Dictionary<int, City> d = new Dictionary<int, City> ();
             int id = 0;
@@ -34,7 +35,7 @@ namespace WeatherForecastAggregator.Bot
                 id++;
             }
             citiesDictionary = d;
-            this.baseLinks = baseLinks;
+            this.forecasters = forecasters;
         }
 
         public void Run()
@@ -96,7 +97,7 @@ namespace WeatherForecastAggregator.Bot
             City curCity = citiesDictionary[id];
             string cityName = curCity.Russian;
 
-            string htmlStr = await GeneralView.GetHtmlAPI(new List<City> { curCity }, baseLinks);
+            string htmlStr = await GeneralView.GetHtmlAPI(new List<City> { curCity }, forecasters);
             PdfDocument pdf = PhotoConverter.ConvertHtmlToPDF(htmlStr);
 
             /*

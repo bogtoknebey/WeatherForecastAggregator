@@ -5,31 +5,29 @@ using WeatherForecastAggregator.Models;
 using System.IO;
 using HtmlAgilityPack;
 using WeatherForecastAggregator.Data;
+using WeatherForecastAggregator.DTO;
 
 namespace WeatherForecastAggregator.Parser
 {
     public class Parser1 : IParser
     {
-        public string BaseLink = BaseLinks.Link1;
-
+        public static Forecaster Forecaster { get; set; } = new Forecaster(0, "sinoptik", "https://sinoptik.ua");
 
         public WeatherDay GetWeatherDay(City city)
         {
             // https://sinoptik.ua/
             // https://sinoptik.ua/погода-харьков
 
-            string link = BaseLink + "погода-" + city.Russian.ToLower();
-
-            WeatherDay weatherDay = new WeatherDay() { City = city, Day = DateTime.Now };
+            string link = Forecaster.BaseLink + "/погода-" + city.Russian.ToLower();
 
             string pathToFile = AppDomain.CurrentDomain.BaseDirectory + '\\';
             IWebDriver driver = new ChromeDriver(pathToFile);
             driver.Navigate().GoToUrl(link);
 
-            
             string xStr = "";
             int temperature, hour;
             int tdCount = 8;
+            List<WeatherHour> weatherHours = new List<WeatherHour>();
             for (int i = 1; i <= tdCount; i++)
             {
                 xStr = "//tr[@class=\"temperature\"]/td[" + i.ToString() + "]";
@@ -38,12 +36,14 @@ namespace WeatherForecastAggregator.Parser
                 xStr = "//tr[@class=\"gray time\"]/td[" + i.ToString() + "]";
                 hour = GetHour(driver.FindElement(By.XPath(xStr)).Text);
 
-                WeatherHour weatherHour = new WeatherHour { Temperature = temperature, Hour = hour };
-                weatherDay.WeatherHours.Add(weatherHour);
+                WeatherHour weatherHour = new WeatherHour(temperature, hour);
+                weatherHours.Add(weatherHour);
             }
 
             driver.Close();
             driver.Quit();
+
+            WeatherDay weatherDay = new WeatherDay(weatherHours, city, Forecaster, DateOnly.FromDateTime(DateTime.Now), DateTime.Now);
             return weatherDay;
         }
 
@@ -91,11 +91,11 @@ namespace WeatherForecastAggregator.Parser
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(html);
 
-            WeatherDay weatherDay = new WeatherDay() { City=city, Day=DateTime.Now };
 
             string xStr = "";
             int temperature, hour;
             int tdCount = 8;
+            List<WeatherHour> weatherHours = new List<WeatherHour>();
             for (int i = 1; i <= tdCount; i++)
             {
                 xStr = "//tr[@class=\"temperature\"]/td[" + i.ToString() + "]";
@@ -105,9 +105,10 @@ namespace WeatherForecastAggregator.Parser
                 hour = GetHour(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
 
                 WeatherHour weatherHour = new WeatherHour { Temperature = temperature, Hour = hour };
-                weatherDay.WeatherHours.Add(weatherHour);
+                weatherHours.Add(weatherHour);
             }
 
+            WeatherDay weatherDay = new WeatherDay(weatherHours, city, Forecaster, DateOnly.FromDateTime(DateTime.Now), DateTime.Now);
             return weatherDay;
         }
 
@@ -117,7 +118,7 @@ namespace WeatherForecastAggregator.Parser
             // https://sinoptik.ua/
             // https://sinoptik.ua/погода-харьков
 
-            string link = BaseLink + "погода-" + city.Russian.ToLower();
+            string link = Forecaster.BaseLink + "/погода-" + city.Russian.ToLower();
             HttpClient client = new HttpClient();
             HttpResponseMessage response = await client.GetAsync(link);
             return await response.Content.ReadAsStringAsync();

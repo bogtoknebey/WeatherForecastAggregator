@@ -10,15 +10,14 @@ namespace WeatherForecastAggregator.Parser
 {
     public class Parser3 : IParser
     {
-        public string BaseLink = BaseLinks.Link3;
+        public static Forecaster Forecaster { get; set; } = new Forecaster(2, "meteo", "https://meteo.ua");
 
 
         public WeatherDay GetWeatherDay(City city)
         {
-            WeatherDay weatherDay = new WeatherDay() { City = city, Day = DateTime.Now };
             string pathToFile = AppDomain.CurrentDomain.BaseDirectory + '\\';
             IWebDriver driver = new ChromeDriver(pathToFile);
-            driver.Navigate().GoToUrl(BaseLink);
+            driver.Navigate().GoToUrl(Forecaster.BaseLink);
             SelectLenguage(driver, 3);
 
             string searchInputStr = "//*[@id=\"search-main-field\"]";
@@ -55,6 +54,7 @@ namespace WeatherForecastAggregator.Parser
             
             int trCount = 2;
             int tdCount = 4;
+            List<WeatherHour> weatherHours = new List<WeatherHour>();
             for (int i = 1; i <= trCount; i++)
             {
                 for (int j = 1; j <= tdCount; j++)
@@ -64,14 +64,15 @@ namespace WeatherForecastAggregator.Parser
                     xStr = "/html/body/div[2]/div/div[2]/div/div[2]/div[1]/div[3]/div/div[2]/div[1]/div[1]/div[1]/div[2]/div[" + i.ToString() + "]/div[" + j.ToString() + "]/div/div[1]";
                     hour = GetHour(driver.FindElement(By.XPath(xStr)).Text);
 
-                    WeatherHour weatherHour = new WeatherHour { Temperature = temperature, Hour = hour };
-                    weatherDay.WeatherHours.Add(weatherHour);
+                    WeatherHour weatherHour = new WeatherHour(temperature, hour);
+                    weatherHours.Add(weatherHour);
                 }
             }
 
-
             driver.Close();
             driver.Quit();
+
+            WeatherDay weatherDay = new WeatherDay(weatherHours, city, Forecaster, DateOnly.FromDateTime(DateTime.Now), DateTime.Now);
             return weatherDay;
         }
         
@@ -161,12 +162,11 @@ namespace WeatherForecastAggregator.Parser
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(html);
 
-            WeatherDay weatherDay = new WeatherDay() { City = city, Day = DateTime.Now };
-
             string xStr = "";
             int temperature, hour;
             int trCount = 2;
             int tdCount = 4;
+            List<WeatherHour> weatherHours = new List<WeatherHour>();
             for (int i = 1; i <= trCount; i++)
             {
                 for (int j = 1; j <= tdCount; j++)
@@ -176,12 +176,12 @@ namespace WeatherForecastAggregator.Parser
                     xStr = "/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[3]/div/div[2]/div[1]/div[1]/div[1]/div[2]/div[" + i.ToString() + "]/div[" + j.ToString() + "]/div/div[1]";
                     hour = GetHour(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
 
-                    WeatherHour weatherHour = new WeatherHour { Temperature = temperature, Hour = hour };
-                    weatherDay.WeatherHours.Add(weatherHour);
+                    WeatherHour weatherHour = new WeatherHour(temperature, hour);
+                    weatherHours.Add(weatherHour);
                 }
             }
 
-
+            WeatherDay weatherDay = new WeatherDay(weatherHours, city, Forecaster, DateOnly.FromDateTime(DateTime.Now), DateTime.Now);
             return weatherDay;
         }
 
@@ -189,14 +189,14 @@ namespace WeatherForecastAggregator.Parser
         async public Task<string> GetWeatherDayHtml(City city)
         {
             // https://meteo.ua/front/forecast/autocomplete?lang=ru&format=json&phrase=%D1%85%D0%B0%D1%80%D1%8C%D0%BA%D0%BE%D0%B2
-            string link = BaseLink + "/front/forecast/autocomplete?lang=ru&format=json&phrase=" + city.Russian.ToLower();
+            string link = Forecaster.BaseLink + "/front/forecast/autocomplete?lang=ru&format=json&phrase=" + city.Ukrainian.ToLower();
             HttpClient client = new HttpClient();
             HttpResponseMessage response = await client.GetAsync(link);
             string myJsonString = await response.Content.ReadAsStringAsync();
             myJsonString = "{\"data\":" + myJsonString + "}";
             JObject myJObject = JObject.Parse(myJsonString);
             string RouteLink = myJObject.SelectToken("data")[0].SelectToken("url").Value<string>();
-            link = BaseLink + RouteLink.Substring(1);
+            link = Forecaster.BaseLink + "/" + RouteLink.Substring(1);
             client = new HttpClient();
             response = await client.GetAsync(link);
             return await response.Content.ReadAsStringAsync();
