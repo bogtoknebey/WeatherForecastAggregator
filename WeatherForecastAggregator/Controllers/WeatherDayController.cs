@@ -24,7 +24,9 @@ namespace WeatherForecastAggregator.Controllers
                 return JsonConvert.SerializeObject("");
 
             IParser parser = SelectParser.GetParser(forecaster);
-            WeatherDay weatherDay = await parser.GetWeatherDayAPI(city);
+            WeatherDay? weatherDay = await parser.GetWeatherDayAPI(city);
+            if (weatherDay is null)
+                return JsonConvert.SerializeObject("");
 
             return JsonConvert.SerializeObject(weatherDay);
         }

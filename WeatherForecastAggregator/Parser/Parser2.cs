@@ -9,6 +9,7 @@ namespace WeatherForecastAggregator.Parser
 {
     public class Parser2 : IParser
     {
+        public const int respondDelay = 5000;
         public static Forecaster Forecaster { get; set; } = new Forecaster(1, "gismeteo", "https://www.gismeteo.com");
 
         public WeatherDay GetWeatherDay(City city)

@@ -27,10 +27,12 @@ namespace WeatherForecastAggregator.Monitor
                 IParser parser = SelectParser.GetParser(f);
                 foreach (City c in cities)
                 {
-                    // WeatherDay weatherDay = await parser.GetWeatherDayAPI(c);
-                    WeatherDay weatherDay = Task.Run(() => parser.GetWeatherDayAPI(c)).Result;
-                    WeatherDays.Add(weatherDay, conn);
-                    Thread.Sleep(1000);
+                    WeatherDay? weatherDay = Task.Run(() => parser.GetWeatherDayAPI(c)).Result;
+                    if (weatherDay is not null)
+                    {
+                        WeatherDays.Add(weatherDay, conn);
+                        Thread.Sleep(1000);
+                    }
                 }
             }
             conn.CloseConnection();
@@ -46,14 +48,6 @@ namespace WeatherForecastAggregator.Monitor
             timer.Elapsed += new ElapsedEventHandler(AddWeatherDaysHandle);
             timer.Interval = lag;
             timer.Enabled = true;
-        }
-
-        async public void testAdd(City city, Forecaster forecaster)
-        {
-            IParser parser = SelectParser.GetParser(forecaster);
-            WeatherDay weatherDay = await parser.GetWeatherDayAPI(city);
-            int i = 0;
-            WeatherDays.Add(weatherDay);
         }
     }
 }

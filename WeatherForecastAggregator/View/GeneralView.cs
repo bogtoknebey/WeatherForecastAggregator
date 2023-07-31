@@ -34,7 +34,9 @@ namespace WeatherForecastAggregator.View
                 {
                     stringBuilder.Append("<div>" + f.BaseLink + "</div>");
                     IParser parser = SelectParser.GetParser(f);
-                    WeatherDay weatherDay = await parser.GetWeatherDayAPI(city);
+                    WeatherDay? weatherDay = await parser.GetWeatherDayAPI(city);
+                    if (weatherDay is null)
+                        continue;
                     stringBuilder.Append(WeatherDayView.GetHtml(weatherDay));
                 }
             }

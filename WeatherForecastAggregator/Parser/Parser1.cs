@@ -11,6 +11,7 @@ namespace WeatherForecastAggregator.Parser
 {
     public class Parser1 : IParser
     {
+        public const int respondDelay = 5000;
         public static Forecaster Forecaster { get; set; } = new Forecaster(0, "sinoptik", "https://sinoptik.ua");
 
         public WeatherDay GetWeatherDay(City city)
@@ -85,43 +86,62 @@ namespace WeatherForecastAggregator.Parser
         }
 
 
-        async public Task<WeatherDay> GetWeatherDayAPI(City city)
+        async public Task<WeatherDay?> GetWeatherDayAPI(City city)
         {
-            string html = await GetWeatherDayHtml(city);
-            var htmlDoc = new HtmlDocument();
-            htmlDoc.LoadHtml(html);
-
-
-            string xStr = "";
-            int temperature, hour;
-            int tdCount = 8;
-            List<WeatherHour> weatherHours = new List<WeatherHour>();
-            for (int i = 1; i <= tdCount; i++)
+            var task = GetWeatherDayHtml(city);
+            if (await Task.WhenAny(task, Task.Delay(respondDelay)) == task)
             {
-                xStr = "//tr[@class=\"temperature\"]/td[" + i.ToString() + "]";
-                temperature = GetTemperature(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
+                // The task completed within {respondDelay} seconds
+                string? html = await task;
+                if (html is null)
+                    return null;
 
-                xStr = "//tr[@class=\"gray time\"]/td[" + i.ToString() + "]";
-                hour = GetHour(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
+                var htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(html);
 
-                WeatherHour weatherHour = new WeatherHour { Temperature = temperature, Hour = hour };
-                weatherHours.Add(weatherHour);
+                string xStr = "";
+                int temperature, hour;
+                int tdCount = 8;
+                List<WeatherHour> weatherHours = new List<WeatherHour>();
+                for (int i = 1; i <= tdCount; i++)
+                {
+                    xStr = "//tr[@class=\"temperature\"]/td[" + i.ToString() + "]";
+                    temperature = GetTemperature(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
+
+                    xStr = "//tr[@class=\"gray time\"]/td[" + i.ToString() + "]";
+                    hour = GetHour(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
+
+                    WeatherHour weatherHour = new WeatherHour { Temperature = temperature, Hour = hour };
+                    weatherHours.Add(weatherHour);
+                }
+
+                WeatherDay weatherDay = new WeatherDay(weatherHours, city, Forecaster, DateOnly.FromDateTime(DateTime.Now), DateTime.Now);
+                return weatherDay;
             }
-
-            WeatherDay weatherDay = new WeatherDay(weatherHours, city, Forecaster, DateOnly.FromDateTime(DateTime.Now), DateTime.Now);
-            return weatherDay;
+            else
+            {
+                // The task did not complete within {respondDelay} seconds
+                return null;
+            }
         }
 
 
-        async public Task<string> GetWeatherDayHtml(City city)
+        async public Task<string?> GetWeatherDayHtml(City city)
         {
-            // https://sinoptik.ua/
-            // https://sinoptik.ua/погода-харьков
+            try 
+            {
+                // https://sinoptik.ua/
+                // https://sinoptik.ua/погода-харьков
 
-            string link = Forecaster.BaseLink + "/погода-" + city.Russian.ToLower();
-            HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.GetAsync(link);
-            return await response.Content.ReadAsStringAsync();
+                string link = Forecaster.BaseLink + "/погода-" + city.Russian.ToLower();
+                HttpClient client = new HttpClient();
+                HttpResponseMessage response = await client.GetAsync(link);
+                return await response.Content.ReadAsStringAsync();
+            } 
+            catch (Exception ex) 
+            {
+                return null;
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ namespace WeatherForecastAggregator.Parser
 {
     public class Parser3 : IParser
     {
+        public const int respondDelay = 5000;
         public static Forecaster Forecaster { get; set; } = new Forecaster(2, "meteo", "https://meteo.ua");
 
 
@@ -156,50 +157,70 @@ namespace WeatherForecastAggregator.Parser
         }
 
 
-        async public Task<WeatherDay> GetWeatherDayAPI(City city)
+        async public Task<WeatherDay?> GetWeatherDayAPI(City city)
         {
-            string html = await GetWeatherDayHtml(city);
-            var htmlDoc = new HtmlDocument();
-            htmlDoc.LoadHtml(html);
-
-            string xStr = "";
-            int temperature, hour;
-            int trCount = 2;
-            int tdCount = 4;
-            List<WeatherHour> weatherHours = new List<WeatherHour>();
-            for (int i = 1; i <= trCount; i++)
+            var task = GetWeatherDayHtml(city);
+            if (await Task.WhenAny(task, Task.Delay(respondDelay)) == task)
             {
-                for (int j = 1; j <= tdCount; j++)
+                // The task completed within {respondDelay} seconds
+                string? html = await task;
+                if (html is null)
+                    return null;
+
+                var htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(html);
+
+                string xStr = "";
+                int temperature, hour;
+                int trCount = 2;
+                int tdCount = 4;
+                List<WeatherHour> weatherHours = new List<WeatherHour>();
+                for (int i = 1; i <= trCount; i++)
                 {
-                    xStr = "/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[3]/div/div[2]/div[1]/div[1]/div[1]/div[2]/div[" + i.ToString() + "]/div[" + j.ToString() + "]/div/div[2]";
-                    temperature = GetTemperature(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
-                    xStr = "/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[3]/div/div[2]/div[1]/div[1]/div[1]/div[2]/div[" + i.ToString() + "]/div[" + j.ToString() + "]/div/div[1]";
-                    hour = GetHour(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
+                    for (int j = 1; j <= tdCount; j++)
+                    {
+                        xStr = "/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[3]/div/div[2]/div[1]/div[1]/div[1]/div[2]/div[" + i.ToString() + "]/div[" + j.ToString() + "]/div/div[2]";
+                        temperature = GetTemperature(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
+                        xStr = "/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[3]/div/div[2]/div[1]/div[1]/div[1]/div[2]/div[" + i.ToString() + "]/div[" + j.ToString() + "]/div/div[1]";
+                        hour = GetHour(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
 
-                    WeatherHour weatherHour = new WeatherHour(temperature, hour);
-                    weatherHours.Add(weatherHour);
+                        WeatherHour weatherHour = new WeatherHour(temperature, hour);
+                        weatherHours.Add(weatherHour);
+                    }
                 }
-            }
 
-            WeatherDay weatherDay = new WeatherDay(weatherHours, city, Forecaster, DateOnly.FromDateTime(DateTime.Now), DateTime.Now);
-            return weatherDay;
+                WeatherDay weatherDay = new WeatherDay(weatherHours, city, Forecaster, DateOnly.FromDateTime(DateTime.Now), DateTime.Now);
+                return weatherDay;
+            }
+            else
+            {
+                // The task did not complete within {respondDelay} seconds
+                return null;
+            }
         }
 
 
-        async public Task<string> GetWeatherDayHtml(City city)
+        async public Task<string?> GetWeatherDayHtml(City city)
         {
-            // https://meteo.ua/front/forecast/autocomplete?lang=ru&format=json&phrase=%D1%85%D0%B0%D1%80%D1%8C%D0%BA%D0%BE%D0%B2
-            string link = Forecaster.BaseLink + "/front/forecast/autocomplete?lang=ru&format=json&phrase=" + city.Ukrainian.ToLower();
-            HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.GetAsync(link);
-            string myJsonString = await response.Content.ReadAsStringAsync();
-            myJsonString = "{\"data\":" + myJsonString + "}";
-            JObject myJObject = JObject.Parse(myJsonString);
-            string RouteLink = myJObject.SelectToken("data")[0].SelectToken("url").Value<string>();
-            link = Forecaster.BaseLink + "/" + RouteLink.Substring(1);
-            client = new HttpClient();
-            response = await client.GetAsync(link);
-            return await response.Content.ReadAsStringAsync();
+            try
+            {
+                // https://meteo.ua/front/forecast/autocomplete?lang=ru&format=json&phrase=%D1%85%D0%B0%D1%80%D1%8C%D0%BA%D0%BE%D0%B2
+                string link = Forecaster.BaseLink + "/front/forecast/autocomplete?lang=ru&format=json&phrase=" + city.Ukrainian.ToLower();
+                HttpClient client = new HttpClient();
+                HttpResponseMessage response = await client.GetAsync(link);
+                string myJsonString = await response.Content.ReadAsStringAsync();
+                myJsonString = "{\"data\":" + myJsonString + "}";
+                JObject myJObject = JObject.Parse(myJsonString);
+                string RouteLink = myJObject.SelectToken("data")[0].SelectToken("url").Value<string>();
+                link = Forecaster.BaseLink + "/" + RouteLink.Substring(1);
+                client = new HttpClient();
+                response = await client.GetAsync(link);
+                return await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
     }
 }

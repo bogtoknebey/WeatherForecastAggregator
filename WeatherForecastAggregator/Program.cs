@@ -51,7 +51,8 @@ app.UseCors(policy => policy.AllowAnyHeader()
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-string s = await GeneralView.GetHtmlAPI(citiesWeb, forecastersWeb);
+
+//string s = await GeneralView.GetHtmlAPI(citiesWeb, forecastersWeb);
 //app.Run(async (context) =>
 //{
 //    StringBuilder stringBuilder = new();
