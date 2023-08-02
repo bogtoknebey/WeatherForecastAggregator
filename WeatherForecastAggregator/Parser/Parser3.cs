@@ -10,7 +10,7 @@ namespace WeatherForecastAggregator.Parser
 {
     public class Parser3 : IParser
     {
-        public const int respondDelay = 5000;
+        public const int respondDelay = 15000;
         public static Forecaster Forecaster { get; set; } = new Forecaster(2, "meteo", "https://meteo.ua");
 
 

@@ -11,7 +11,7 @@ namespace WeatherForecastAggregator.Parser
 {
     public class Parser1 : IParser
     {
-        public const int respondDelay = 5000;
+        public const int respondDelay = 10000;
         public static Forecaster Forecaster { get; set; } = new Forecaster(0, "sinoptik", "https://sinoptik.ua");
 
         public WeatherDay GetWeatherDay(City city)
