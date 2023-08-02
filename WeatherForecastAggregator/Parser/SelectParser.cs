@@ -11,7 +11,7 @@ namespace WeatherForecastAggregator.Parser
             {
                 return new Parser1();
             }
-            if (f.Name == "gismeteo")
+            if (f.Name == "meteofor")
             {
                 return new Parser2();
             }

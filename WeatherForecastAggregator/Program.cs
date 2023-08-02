@@ -19,13 +19,13 @@ List<City> allCities = Cities.GetAll();
 List<Forecaster> allForecasters = Forecasters.GetAll();
 
 
-List<City> citiesBot = new List<City>() { allCities[0], allCities[1] };
+List<City> citiesBot = new List<City>() { allCities[0], allCities[1], allCities[2], allCities[3], allCities[4] };
 List<City> citiesWeb = new List<City>() { allCities[0], allCities[1] };
 List<City> citiesMonitoring = allCities;
 
-List<Forecaster> forecastersBot = new List<Forecaster>() { allForecasters[0], allForecasters[2] };
-List<Forecaster> forecastersWeb = new List<Forecaster>() { allForecasters[0], allForecasters[2] };
-List<Forecaster> forecastersMonitoring = new List<Forecaster>() { allForecasters[0], allForecasters[2] };
+List<Forecaster> forecastersBot = new List<Forecaster>() { allForecasters[0], allForecasters[1], allForecasters[2] };
+List<Forecaster> forecastersWeb = new List<Forecaster>() { allForecasters[0], allForecasters[1], allForecasters[2] };
+List<Forecaster> forecastersMonitoring = new List<Forecaster>() { allForecasters[0], allForecasters[1], allForecasters[2] };
 
 // Monitoring
 WeatherForecastAggregator.Monitor.Monitor monitor = new WeatherForecastAggregator.Monitor.Monitor(

@@ -16,7 +16,7 @@ namespace WeatherForecastAggregator.Controllers
         {
             // TODO Delete next line
             
-            if (forecasterId == 1) return JsonConvert.SerializeObject("");
+            // if (forecasterId == 1) return JsonConvert.SerializeObject("");
 
             Forecaster? forecaster = Forecasters.GetById(forecasterId);
             City? city = Cities.GetById(cityId);

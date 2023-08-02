@@ -9,8 +9,8 @@ namespace WeatherForecastAggregator.Parser
 {
     public class Parser2 : IParser
     {
-        public const int respondDelay = 5000;
-        public static Forecaster Forecaster { get; set; } = new Forecaster(1, "gismeteo", "https://www.gismeteo.com");
+        public const int respondDelay = 15000;
+        public static Forecaster Forecaster { get; set; } = new Forecaster(1, "meteofor", "https://meteofor.com.ua/");
 
         public WeatherDay GetWeatherDay(City city)
         {
@@ -90,13 +90,17 @@ namespace WeatherForecastAggregator.Parser
             List<WeatherHour> weatherHours = new List<WeatherHour>();
             for (int i = 1; i <= tdCount; i++)
             {
-                xStr = "/html/body/section/div[1]/section[3]/div/div/div/div[3]/div/div/div[" + i.ToString() + "]/span[1]";
+                // /html/body/section/div[1]/section[3]/div[1]/div/div/div[4]/div/div/div[1]/span[1]
+                // /html/body/section/div[1]/section[3]/div[1]/div/div/div[4]/div/div/div[2]/span[1]
+                xStr = "/html/body/section/div[1]/section[3]/div[1]/div/div/div[4]/div/div/div[" + i.ToString() + "]/span[1]";
                 string strTemperature = htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText.Replace("&minus;", "-");
                 temperature = Convert.ToInt32(strTemperature);
 
-
-                xStr = "/html/body/section/div[1]/section[3]/div/div/div/div[1]/div[" + i.ToString() + "]/span";
+                // /html/body/section/div[1]/section[3]/div[1]/div/div/div[2]/div[1]/span
+                // /html/body/section/div[1]/section[3]/div[1]/div/div/div[2]/div[2]/span
+                xStr = "/html/body/section/div[1]/section[3]/div[1]/div/div/div[2]/div[" + i.ToString() + "]/span";
                 hourStr = htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText;
+                hourStr = hourStr.Trim();
                 hourStr = hourStr.Substring(0, hourStr.Length - 2);
                 hour = Convert.ToInt32(hourStr);
 
@@ -111,7 +115,7 @@ namespace WeatherForecastAggregator.Parser
 
         async public Task<string> GetWeatherDayHtml(City city)
         {
-            // https://www.gismeteo.com/mq/search/тернополь/1/
+            // https://meteofor.com.ua/mq/search/тернополь/1/
             // TODO https://2cyr.com/decode/?lang=ru
 
             string link = Forecaster.BaseLink + "/mq/search/" + city.Russian.ToLower() + "/1/";

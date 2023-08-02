@@ -16,9 +16,9 @@ namespace WeatherForecastAggregator.Controllers
         [HttpGet("{forecasterId}/{cityId}/{daysAgo}")]
         async public Task<string> Index(int forecasterId, int cityId, int daysAgo)
         {
-            
             // TODO Delete next line
-            if (forecasterId == 1) return JsonConvert.SerializeObject("");
+            // if (forecasterId == 1) return JsonConvert.SerializeObject("");
+
             Forecaster? forecaster = Forecasters.GetById(forecasterId);
             City? city = Cities.GetById(cityId);
             if (forecaster is null || city is null)
