@@ -27,11 +27,11 @@ namespace WeatherForecastAggregator.Controllers
             DateOnly day = DateOnly.FromDateTime(DateTime.Now.AddDays(-daysAgo));
 
             // return JsonConvert.SerializeObject(WeatherDays.GetWeatherHours(forecaster.Id, city.Id, day));
-
+            Dictionary<DateTime, List<WeatherHour>> weatherHours =  WeatherDays.GetWeatherHours(forecaster.Id, city.Id, day);
             Dictionary<DateTime, Dictionary<int, int>> diviations = Analyst.GetDeviations(forecaster, city, day);
             Dictionary<int, int> biggestDiviation = Analyst.GetBiggestDeviation(forecaster, city, day);
 
-            object[] res = { diviations, biggestDiviation };
+            object[] res = { diviations, biggestDiviation, weatherHours };
             return JsonConvert.SerializeObject(res);
         }
     }
