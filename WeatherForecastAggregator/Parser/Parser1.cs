@@ -105,17 +105,54 @@ namespace WeatherForecastAggregator.Parser
                 List<WeatherHour> weatherHours = new List<WeatherHour>();
                 for (int i = 1; i <= tdCount; i++)
                 {
+                    // get temperature
                     xStr = "//tr[@class=\"temperature\"]/td[" + i.ToString() + "]";
-                    temperature = GetTemperature(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
+                    var selectedNode = htmlDoc.DocumentNode.SelectSingleNode(xStr);
+                    if (selectedNode is not null)
+                    {
+                        try
+                        {
+                            temperature = GetTemperature(selectedNode.InnerText);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                            return null;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("There no such element");
+                        return null;
+                    }
 
+                    // get hour
                     xStr = "//tr[@class=\"gray time\"]/td[" + i.ToString() + "]";
-                    hour = GetHour(htmlDoc.DocumentNode.SelectSingleNode(xStr).InnerText);
+                    selectedNode = htmlDoc.DocumentNode.SelectSingleNode(xStr);
+                    if (selectedNode is not null)
+                    {
+                        try
+                        {
+                            hour = GetHour(selectedNode.InnerText);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                            return null;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("There no such element");
+                        return null;
+                    }
 
                     WeatherHour weatherHour = new WeatherHour { Temperature = temperature, Hour = hour };
                     weatherHours.Add(weatherHour);
                 }
 
                 WeatherDay weatherDay = new WeatherDay(weatherHours, city, Forecaster, DateOnly.FromDateTime(DateTime.Now), DateTime.Now);
+
                 return weatherDay;
             }
             else
